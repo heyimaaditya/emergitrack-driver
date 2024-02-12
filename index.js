@@ -244,3 +244,57 @@ app.post("/login",async(req,res)=>{
       console.log(err);
   })
 });
+app.post("/driverProfile",(req,res)=>{
+  var hospitalName=req.body.hospitalName;
+  var hospitalAddress=req.body.hospitalAddress;
+  var driverId=req.body.driverId;
+  res.render("driverProfile",{hospitalName:hospitalName,driverId:driverId,hospitalAddress:hospitalAddress});
+});
+
+app.post("/signup",(req,res)=>{
+  hospitalName=req.body.hospitalName;
+  hospitalAddress=req.body.hospitalAddress;
+  res.render("signup",{hospitalName:hospitalName,hospitalAddress:hospitalAddress});
+});
+
+app.post("/register",(req,res)=>{
+ var hospitalName=req.body.hospitalName;
+ var hospitalAddress=req.body.hospitalAddress;
+ var driverName=req.body.driverName;
+ var driverId=req.body.driverId;
+ var password=req.body.password;
+ var driverNum=req.body.driverNum;
+ hospitallist.findOne({hospitalName:hospitalName,hospitalAddress:hospitalAddress}).then(function(hospital){
+  if(!hospital){
+      res.send("hospital Not Found");
+  }
+  else{
+      const driver=hospital.driver.filter((driver)=>driver.driverId===driverId);
+      if(driver.length!=0){
+          res.render("signup",{hospitalName:hospitalName,hospitalAddress:hospitalAddress});
+      }
+      else{
+          hospitallist.findOneAndUpdate(
+              {hospitalName:hospitalName,hospitalAddress:hospitalAddress},
+              { $push: { driver: { driverName: driverName, driverNum: driverNum,driverId:driverId,driverPass:password,driverStatus:'sleep' } } },
+              { new: true }
+              ) .then((updatedDriver) => {
+              if (!updatedDriver) {
+                  res.send("Hospital is not registered");
+              } else {
+                  console.log("Driver updated successfully");
+                  res.render("driverProfile",{elem:updatedDriver,driverId:driverId,driverName:driverName});
+              }
+              })
+              .catch((error) => {
+              console.log("Error updating pending case:", error);
+              res.render("signup",{hospitalName:hospitalName,hospitalAddress:hospitalAddress});
+              });
+      }
+  }
+
+ }).catch((err)=>{
+  console.log(err);
+ });
+
+});
