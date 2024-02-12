@@ -298,3 +298,33 @@ app.post("/register",(req,res)=>{
  });
 
 });
+app.post("/status", (req, res) => {
+  var hospitalName = req.body.hospitalName;
+  var hospitalAddress = req.body.hospitalAddress;
+  var driverId = req.body.driverId;
+  var status = req.body.status;
+
+  hospitallist
+    .findOneAndUpdate(
+      {
+        hospitalName: hospitalName,
+        hospitalAddress: hospitalAddress,
+        "driver.driverId": driverId 
+      },
+      {
+        $set: { "driver.$.driverStatus": status } 
+      },
+      { new: true }
+    )
+    .then((updatedHospital) => {
+      if (!updatedHospital) {
+        res.send("Hospital not found");
+      } else {
+        res.render("currentStatus",{hospitalName:hospitalName,hospitalAddress:hospitalAddress,driverId:driverId,driverStatus:status});
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      res.send(err);
+    });
+});
