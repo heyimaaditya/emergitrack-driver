@@ -61,3 +61,16 @@ const RegisteredHospital=new mongoose.Schema({
     patientAssign:String
   }]
 });
+const driverUser=mongoose.model("driverUser",driverUserSchema);
+const hospitallist=mongoose.model("hospitallist",RegisteredHospital);
+app.get("/",(req,res)=>{
+  var allState=(State.getStatesOfCountry("IN"));
+  var allCities={};
+  for(var i=0;i<allState.length;i++){
+    var city=City.getCitiesOfState("IN",allState[i].isoCode);
+    allCities[allState[i].name]=city;
+  }
+  var allCitiesString=JSON.stringify(allCities);
+  res.render("driver-home",{allState:allState,allCitiesString:allCitiesString});
+});
+
