@@ -328,3 +328,84 @@ app.post("/status", (req, res) => {
       res.send(err);
     });
 });
+app.post("/currentStatus",async(req,res)=>{
+  var driverId=req.body.driverId;
+  var hospitalName=req.body.hospitalName;
+  var hospitalAddress=req.body.hospitalAddress;
+  var status;
+  hospitallist.findOne({
+      hospitalName:hospitalName,
+      hospitalAddress:hospitalAddress,
+  }).then((hospital)=>{
+      if(!hospital){
+          res.send("Hospital Not Found");
+      }
+      else{
+          const driver=hospital.driver.filter((driver)=>driver.driverId===driverId);
+          if(driver.length==0){
+              res.send("driver not found");
+          }
+          else{
+              status=driver[0].driverStatus;
+              if(status!='working'){
+                  res.render("currentStatus",{hospitalName:hospitalName,hospitalAddress:hospitalAddress,driverId:driverId,driverStatus:status});
+              }
+              else{
+                  var patientName;
+                  var patientAddress;
+                  var patientPhoneNum;
+                  hospitallist.findOne({hospitalName:hospitalName,hospitalAddress:hospitalAddress}).then((hospital)=>{
+                      if(!hospital){
+                          res.send("hospital not found");
+                      }
+                      else{
+                          const driver = hospital.driver.find((driver) => driver.driverId === driverId);
+                          if (!driver) {
+                            res.send('Driver not found');
+                          }
+                           
+                          var patientId=driver.patientAssign;
+                          console.log(hospital.patient[0]._id);
+                          const patient = hospital.patient.find((patient) => patient._id.equals(new ObjectId(patientId)));
+                          
+                          if(!patient){
+                              res.send("patient not found");
+                          }
+                          patientName=patient.patientName;
+                          patientAddress=patient.patientAddress;
+                          patientPhoneNum=patient.patientNum;
+                          res.render("workingStatus",{hospitalName:hospitalName,hospitalAddress:hospitalAddress,patientName:patientName,patientAddress:patientAddress,patientNum:patientPhoneNum,driverId:driverId,patientId:patientId});
+                      }
+                  }).catch((err)=>{
+                      res.send(err);
+                  })
+                  
+              }
+          }
+      }
+  }).catch((err)=>{
+      res.send(err);
+  });
+
+});
+app.post("/workingStatus",async(req,res)=>{
+  var driverId=req.body.driverId;
+  var hospitalName=req.body.hospitalName;
+  var hospitalAddress=req.body.hospitalAddress;
+  var patientId=req.body.patientId;
+  
+
+  await hospitallist.findOneAndUpdate({hospitalName:hospitalName,hospitalAddress:hospitalAddress,"driver.driverId":driverId},{$set:{"driver.$.driverStatus":"active","driver.$.patientAssign":""}});
+
+  hospitallist.findOneAndUpdate({hospitalName:hospitalName,hospitalAddress:hospitalAddress,"patient._id":patientId},{$set:{"patient.$.patientStatus":"complete","patient.$.ambuTrack":"reached"}}).then(()=>{
+    res.render("currentStatus",{hospitalName:hospitalName,hospitalAddress:hospitalAddress,driverId:driverId,driverStatus:"active"});
+  }).catch((err)=>{
+    res.send(err);
+  })
+
+});
+
+
+
+
+app.listen(process.env.PORT || 2001);
