@@ -213,3 +213,34 @@ app.get("/message",(req,res)=>{
   res.render("message");
 });
 
+app.post("/login",async(req,res)=>{
+  var hospitalName;
+  var hospitalAddress;
+  var driverName;
+  var driverId;
+  var password;
+  function getvalue(){
+      hospitalName=req.body.hospitalName;
+      hospitalAddress=req.body.hospitalAddress;
+      driverName=req.body.driverName;
+      driverId=req.body.driverId;
+      password=req.body.password;
+  }
+  await getvalue();
+  hospitallist.findOne({hospitalName:hospitalName,hospitalAddress:hospitalAddress}).then(function(hospital){
+      if(!hospital){
+          res.send("hospital not found");
+      }
+      else{
+          const driver=hospital.driver.filter((driver)=>driver.driverName===driverName && driver.driverId===driverId && driver.driverPass===password);
+          if(driver.length==0){
+              res.render("login",{hospitalName:hospitalName,hospitalAddress:hospitalAddress});
+          }
+          else{
+              res.render("driverProfile",{hospitalName:hospitalName,driverId:driverId,hospitalAddress:hospitalAddress});
+          }
+      }
+  }).catch((err)=>{
+      console.log(err);
+  })
+});
